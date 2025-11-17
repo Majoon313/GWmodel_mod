@@ -5,6 +5,7 @@
 gwr.montecarlo<-function(formula, data = list(),nsims=99, kernel="bisquare",adaptive=F, bw,
                          p=2, theta=0, longlat=F,dMat)
 {
+	print("This is a modded version of the gwr.montecarlo function by Majoon313, only difference is a progress bar though.")
   ##Extract the model data frame
   this.call <- match.call() 
   if (!is.null(data))
@@ -88,8 +89,11 @@ gwr.montecarlo<-function(formula, data = list(),nsims=99, kernel="bisquare",adap
   }
  ###################### Random sequence
   sq<-1:length(y)
+
+  pb <- txtProgressBar(min = 0, max = nsims, style = 3)	
   for(k in 1:nsims)
   {
+	     setTxtProgressBar(pb, k)
     #randsq<-randomSQ(sq)
     #randx<-x[randsq,]
     #randy<-y[randsq]
@@ -109,6 +113,7 @@ gwr.montecarlo<-function(formula, data = list(),nsims=99, kernel="bisquare",adap
       Var_betas[k+1,j]<-var(betas[,j])
     }
   }
+	close(pb)
   ######Compute the p-values
   p.values<-numeric(var.n)
   for (j in 1:var.n)
