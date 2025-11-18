@@ -312,17 +312,55 @@ generate.lm.data <- function(obj,W,dep.var) {
 		colnames(x)[ypos] = yname
 		x <- data.frame(x)}
 # What kind of model is it
+	# model.type <- function(obj) {
+#   print(obj)
+#   if (inherits(obj, "lm")) return("lm")
+#   if (inherits(obj, "spautolm")) return("spautolm")
+#   if (inherits(obj, "sarlm") || inherits(obj, "Sarlm")) { #added Sarlm 18.11.25
+#     if (obj$type == "error") return("errorsarlm")
+#     if (obj$type == "lag") return("lagsarlm")
+#   }
+#   print(paste0("Apparently wrong object type: ",obj$type))
+#   stop("Unsupported regression type.")
+# }#old
+	
 	model.type <- function(obj) {
-	print(obj)
-    if (inherits(obj, "lm")) return("lm")
-    if (inherits(obj, "spautolm")) return("spautolm")
-    if (inherits(obj, "sarlm") || inherits(obj, "Sarlm")) { #added Sarlm 18.11.25
-        if (obj$type == "error") return("errorsarlm")
-        if (obj$type == "lag") return("lagsarlm")
+  # Quick diagnostics (optional)
+  cls <- class(obj)
+  fam <- tryCatch(obj$family, error = function(e) NULL)
+  rho <- tryCatch(obj$rho, error = function(e) NULL)
+  lam <- tryCatch(obj$lambda, error = function(e) NULL)
+  
+  # lm
+  if (inherits(obj, "lm")) return("lm")
+  
+  # spautolm / Spautolm (SMA/SAR/CAR handled internally)
+  if (inherits(obj, "spautolm") || inherits(obj, "Spautolm")) {
+    return("spautolm")
+  }
+  
+  # sarlm / Sarlm -> distinguish lag vs error
+  if (inherits(obj, "sarlm") || inherits(obj, "Sarlm")) {
+    # Preferred: use explicit fields if present
+    if (!is.null(rho)) return("lagsarlm")
+    if (!is.null(lam)) return("errorsarlm")
+    # Fallback: call name if parameters absent
+    fun <- tryCatch(as.character(obj$call[[1]]), error = function(e) NULL)
+    if (!is.null(fun)) {
+      if (grepl("lagsarlm", fun, ignore.case = TRUE)) return("lagsarlm")
+      if (grepl("errorsarlm", fun, ignore.case = TRUE)) return("errorsarlm")
     }
-	print(paste0("Apparently wrong object type: ",obj$type))
-    stop("Unsupported regression type.")
-}
+    stop("Sarlm object detected but could not determine subtype (lag vs error).")
+  }
+  
+  # Unknown
+  msg <- paste0(
+    "Unsupported regression type. class=", paste(cls, collapse = ","),
+    ", family=", fam, ", rho=", rho, ", lambda=", lam
+  )
+  stop(msg)
+} #added 18.11.25
+
 
 # Do the simulation
 	switch(model.type(obj),
