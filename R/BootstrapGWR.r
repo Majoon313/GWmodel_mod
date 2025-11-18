@@ -370,42 +370,93 @@ generate.lm.data <- function(obj,W,dep.var) {
 		spautolm=generate.data.smalm(obj,W,dep.var))
 		}
 library(progress)
-parametric.bs <- function(obj,dep.var,dp.locat,W,bsfun,R=100,report=NULL,...) {
-	result = NULL
-	print("parametric.bs")
-	pb <- progress_bar$new(
+parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, ...) {
+  successes <- 0   # Zähler für erfolgreiche Iterationen
+  result <- NULL
+  print("parametric.bs")
+  
+  pb <- progress_bar$new(
     total = R,
     format = "Bootstrap [:bar] :percent | Iteration :current/:total | eta: :eta"
   )
-	for (i in 1:R) 
-	{
-		if (! is.null(report) & (i %% report == 0)) 
-			cat(sprintf("Iteration %5d\n",i)) 
-		dset <- generate.lm.data(obj,W,dep.var)
-		sp.dset <- SpatialPointsDataFrame(dp.locat,dset, match.ID=FALSE)
-		#print(class(sp.dset))
-		result <- rbind(result,bsfun(sp.dset,...))
-		pb$tick()
-	}
-	result }
+  
+  for (i in 1:R) {
+    if (!is.null(report) & (i %% report == 0)) 
+      cat(sprintf("Iteration %5d\n", i))
+    
+    # Fehlerrobust: Daten generieren
+    dset <- tryCatch({
+      generate.lm.data(obj, W, dep.var)
+    }, error = function(e) {
+      message(sprintf("Iteration %d failed in generate.lm.data: %s", i, e$message))
+      return(NULL)
+    })
+    
+    if (!is.null(dset)) {
+      sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID=FALSE)
+      
+      # Fehlerrobust: Bootstrap-Funktion anwenden
+      res_i <- tryCatch(bsfun(sp.dset, ...), error=function(e) {
+        message(sprintf("Iteration %d failed in bsfun: %s", i, e$message))
+        return(NULL)
+      })
+      
+      if (!is.null(res_i)) {
+        result <- rbind(result, res_i)
+        successes <- successes + 1   # Erfolgreiche Iteration zählen
+      }
+    }
+    pb$tick()
+  }
+  
+  cat("Erfolgreiche Iterationen:", successes, "von", R, "\n")
+  return(result)
+}
+
 ####Localized statistic	
-parametric.bs.local <- function(obj,dep.var,dp.locat,W,bsfun,R=100,report=NULL,...) {
-	result <- list()
-	print("parametric.bs.local")
-	pb <- progress_bar$new(
+parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, ...) {
+  successes <- 0   # Zähler für erfolgreiche Iterationen
+  result <- list()
+  print("parametric.bs.local")
+  
+  pb <- progress_bar$new(
     total = R,
     format = "Bootstrap [:bar] :percent | Iteration :current/:total | eta: :eta"
   )
-	for (i in 1:R) 
-	{
-		if (! is.null(report) & (i %% report == 0)) 
-			cat(sprintf("Iteration %5d\n",i)) 
-		dset <- generate.lm.data(obj,W,dep.var)
-		sp.dset <- SpatialPointsDataFrame(dp.locat,dset, match.ID=FALSE) 
-		result[[i]] <- bsfun(sp.dset,...)
-		pb$tick()
-	}
-	result }
+  
+  for (i in 1:R) {
+    if (!is.null(report) & (i %% report == 0)) 
+      cat(sprintf("Iteration %5d\n", i))
+    
+    # Fehlerrobust: Daten generieren
+    dset <- tryCatch({
+      generate.lm.data(obj, W, dep.var)
+    }, error = function(e) {
+      message(sprintf("Iteration %d failed in generate.lm.data: %s", i, e$message))
+      return(NULL)
+    })
+    
+    if (!is.null(dset)) {
+      sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID=FALSE)
+      
+      # Fehlerrobust: Bootstrap-Funktion anwenden
+      res_i <- tryCatch(bsfun(sp.dset, ...), error=function(e) {
+        message(sprintf("Iteration %d failed in bsfun: %s", i, e$message))
+        return(NULL)
+      })
+      
+      if (!is.null(res_i)) {
+        result[[i]] <- res_i
+        successes <- successes + 1   # Erfolgreiche Iteration zählen
+      }
+    }
+    pb$tick()
+  }
+  
+  cat("Erfolgreiche Iterationen:", successes, "von", R, "\n")
+  return(result)
+}
+
 	
 ####Tiny functions
 se.bs <- function(bs.out) apply(bs.out,2,sd)
