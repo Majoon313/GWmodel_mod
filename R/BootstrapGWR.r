@@ -372,6 +372,7 @@ generate.lm.data <- function(obj,W,dep.var) {
 library(progress)
 parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, ...) {
   successes <- 0   # Zähler für erfolgreiche Iterationen
+  failures  <- list(MLR=0, ERR=0, SMA=0, LAG=0)  # Fehlerzähler pro Modelltyp
   result <- NULL
   print("parametric.bs")
   
@@ -397,7 +398,12 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, 
       
       # Fehlerrobust: Bootstrap-Funktion anwenden
       res_i <- tryCatch(bsfun(sp.dset, ...), error=function(e) {
-        message(sprintf("Iteration %d failed in bsfun: %s", i, e$message))
+        msg <- e$message
+        # Fehler den Modelltypen zuordnen
+        if (grepl("MLR", msg, ignore.case=TRUE)) failures$MLR <- failures$MLR + 1
+        if (grepl("ERR", msg, ignore.case=TRUE)) failures$ERR <- failures$ERR + 1
+        if (grepl("SMA", msg, ignore.case=TRUE)) failures$SMA <- failures$SMA + 1
+        if (grepl("LAG", msg, ignore.case=TRUE)) failures$LAG <- failures$LAG + 1
         return(NULL)
       })
       
@@ -409,13 +415,18 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, 
     pb$tick()
   }
   
-  cat("Erfolgreiche Iterationen:", successes, "von", R, "\n")
+  cat("Gesamt erfolgreiche Iterationen:", successes, "von", R, "\n")
+  cat("Fehlerübersicht pro Modelltyp:\n")
+  print(failures)
+  
   return(result)
 }
+
 
 ####Localized statistic	
 parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, ...) {
   successes <- 0   # Zähler für erfolgreiche Iterationen
+  failures  <- list(MLR=0, ERR=0, SMA=0, LAG=0)  # Fehlerzähler pro Modelltyp
   result <- list()
   print("parametric.bs.local")
   
@@ -441,7 +452,12 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=
       
       # Fehlerrobust: Bootstrap-Funktion anwenden
       res_i <- tryCatch(bsfun(sp.dset, ...), error=function(e) {
-        message(sprintf("Iteration %d failed in bsfun: %s", i, e$message))
+        msg <- e$message
+        # Fehler den Modelltypen zuordnen
+        if (grepl("MLR", msg, ignore.case=TRUE)) failures$MLR <- failures$MLR + 1
+        if (grepl("ERR", msg, ignore.case=TRUE)) failures$ERR <- failures$ERR + 1
+        if (grepl("SMA", msg, ignore.case=TRUE)) failures$SMA <- failures$SMA + 1
+        if (grepl("LAG", msg, ignore.case=TRUE)) failures$LAG <- failures$LAG + 1
         return(NULL)
       })
       
@@ -453,7 +469,10 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=
     pb$tick()
   }
   
-  cat("Erfolgreiche Iterationen:", successes, "von", R, "\n")
+  cat("Gesamt erfolgreiche Iterationen:", successes, "von", R, "\n")
+  cat("Fehlerübersicht pro Modelltyp:\n")
+  print(failures)
+  
   return(result)
 }
 
