@@ -313,11 +313,15 @@ generate.lm.data <- function(obj,W,dep.var) {
 		x <- data.frame(x)}
 # What kind of model is it
 	model.type <- function(obj) {
-		if (inherits(obj, "lm")) return("lm")
-		if (inherits(obj, "spautolm")) return("spautolm")
-		if (!inherits(obj, "sarlm")) stop("Unsupported regression type.")
-		if (obj$type=="error") return("errorsarlm")
-		if (obj$type=="lag") return("lagsarlm") }
+    if (inherits(obj, "lm")) return("lm")
+    if (inherits(obj, "spautolm")) return("spautolm")
+    if (inherits(obj, "sarlm") || inherits(obj, "Sarlm")) { #added Sarlm 18.11.25
+        if (obj$type == "error") return("errorsarlm")
+        if (obj$type == "lag") return("lagsarlm")
+    }
+    stop("Unsupported regression type.")
+}
+
 # Do the simulation
 	switch(model.type(obj),
 		lm=generate.data.lm(obj,W,dep.var),
