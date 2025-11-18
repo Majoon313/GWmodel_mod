@@ -319,6 +319,7 @@ generate.lm.data <- function(obj,W,dep.var) {
         if (obj$type == "error") return("errorsarlm")
         if (obj$type == "lag") return("lagsarlm")
     }
+	print(paste0("Apparently wrong object type: ",obj$type))
     stop("Unsupported regression type.")
 }
 
