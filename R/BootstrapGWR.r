@@ -329,9 +329,14 @@ generate.lm.data <- function(obj,W,dep.var) {
 		errorsarlm=generate.data.errorsarlm(obj,W,dep.var), 
 		spautolm=generate.data.smalm(obj,W,dep.var))
 		}
-
+library(progress)
 parametric.bs <- function(obj,dep.var,dp.locat,W,bsfun,R=100,report=NULL,...) {
 	result = NULL
+	print("parametric.bs")
+	pb <- progress_bar$new(
+    total = R,
+    format = "Bootstrap [:bar] :percent | Iteration :current/:total | eta: :eta"
+  )
 	for (i in 1:R) 
 	{
 		if (! is.null(report) & (i %% report == 0)) 
@@ -340,11 +345,17 @@ parametric.bs <- function(obj,dep.var,dp.locat,W,bsfun,R=100,report=NULL,...) {
 		sp.dset <- SpatialPointsDataFrame(dp.locat,dset, match.ID=FALSE)
 		#print(class(sp.dset))
 		result <- rbind(result,bsfun(sp.dset,...))
+		pb$tick()
 	}
 	result }
 ####Localized statistic	
 parametric.bs.local <- function(obj,dep.var,dp.locat,W,bsfun,R=100,report=NULL,...) {
 	result <- list()
+	print("parametric.bs.local")
+	pb <- progress_bar$new(
+    total = R,
+    format = "Bootstrap [:bar] :percent | Iteration :current/:total | eta: :eta"
+  )
 	for (i in 1:R) 
 	{
 		if (! is.null(report) & (i %% report == 0)) 
@@ -352,6 +363,7 @@ parametric.bs.local <- function(obj,dep.var,dp.locat,W,bsfun,R=100,report=NULL,.
 		dset <- generate.lm.data(obj,W,dep.var)
 		sp.dset <- SpatialPointsDataFrame(dp.locat,dset, match.ID=FALSE) 
 		result[[i]] <- bsfun(sp.dset,...)
+		pb$tick()
 	}
 	result }
 	
