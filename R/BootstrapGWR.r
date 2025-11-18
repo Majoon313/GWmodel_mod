@@ -313,6 +313,7 @@ generate.lm.data <- function(obj,W,dep.var) {
 		x <- data.frame(x)}
 # What kind of model is it
 	model.type <- function(obj) {
+	print(obj)
     if (inherits(obj, "lm")) return("lm")
     if (inherits(obj, "spautolm")) return("spautolm")
     if (inherits(obj, "sarlm") || inherits(obj, "Sarlm")) { #added Sarlm 18.11.25
