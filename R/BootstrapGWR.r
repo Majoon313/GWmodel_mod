@@ -396,15 +396,34 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, 
     if (!is.null(dset)) {
       sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID=FALSE)
       
-      res_i <- tryCatch(bsfun(sp.dset, ...), error=function(e) {
-        msg <- e$message
-        if (grepl("MLR", msg, ignore.case=TRUE)) failures$MLR <- failures$MLR + 1
-        else if (grepl("ERR", msg, ignore.case=TRUE)) failures$ERR <- failures$ERR + 1
-        else if (grepl("SMA", msg, ignore.case=TRUE)) failures$SMA <- failures$SMA + 1
-        else if (grepl("LAG", msg, ignore.case=TRUE)) failures$LAG <- failures$LAG + 1
-        else failures$OTHER <- failures$OTHER + 1
-        return(NULL)
-      })
+      res_i <- tryCatch(
+        bsfun(sp.dset, ...),
+        error=function(e) {
+          msg <- e$message
+          if (grepl("MLR", msg, ignore.case=TRUE)) failures$MLR <- failures$MLR + 1
+          else if (grepl("ERR", msg, ignore.case=TRUE)) failures$ERR <- failures$ERR + 1
+          else if (grepl("SMA", msg, ignore.case=TRUE)) failures$SMA <- failures$SMA + 1
+          else if (grepl("LAG", msg, ignore.case=TRUE)) failures$LAG <- failures$LAG + 1
+          else failures$OTHER <- failures$OTHER + 1
+          return(NULL)
+        },
+        warning=function(w) {
+          msg <- conditionMessage(w)
+          if (grepl("matrix is singular", msg, ignore.case=TRUE)) {
+            failures$OTHER <- failures$OTHER + 1
+          }
+          invokeRestart("muffleWarning")
+          return(NULL)
+        },
+        message=function(m) {
+          msg <- conditionMessage(m)
+          if (grepl("matrix is singular", msg, ignore.case=TRUE)) {
+            failures$OTHER <- failures$OTHER + 1
+          }
+          invokeRestart("muffleMessage")
+          return(NULL)
+        }
+      )
       
       if (!is.null(res_i)) {
         result <- rbind(result, res_i)
@@ -450,15 +469,34 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=
     if (!is.null(dset)) {
       sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID=FALSE)
       
-      res_i <- tryCatch(bsfun(sp.dset, ...), error=function(e) {
-        msg <- e$message
-        if (grepl("MLR", msg, ignore.case=TRUE)) failures$MLR <- failures$MLR + 1
-        else if (grepl("ERR", msg, ignore.case=TRUE)) failures$ERR <- failures$ERR + 1
-        else if (grepl("SMA", msg, ignore.case=TRUE)) failures$SMA <- failures$SMA + 1
-        else if (grepl("LAG", msg, ignore.case=TRUE)) failures$LAG <- failures$LAG + 1
-        else failures$OTHER <- failures$OTHER + 1
-        return(NULL)
-      })
+      res_i <- tryCatch(
+        bsfun(sp.dset, ...),
+        error=function(e) {
+          msg <- e$message
+          if (grepl("MLR", msg, ignore.case=TRUE)) failures$MLR <- failures$MLR + 1
+          else if (grepl("ERR", msg, ignore.case=TRUE)) failures$ERR <- failures$ERR + 1
+          else if (grepl("SMA", msg, ignore.case=TRUE)) failures$SMA <- failures$SMA + 1
+          else if (grepl("LAG", msg, ignore.case=TRUE)) failures$LAG <- failures$LAG + 1
+          else failures$OTHER <- failures$OTHER + 1
+          return(NULL)
+        },
+        warning=function(w) {
+          msg <- conditionMessage(w)
+          if (grepl("matrix is singular", msg, ignore.case=TRUE)) {
+            failures$OTHER <- failures$OTHER + 1
+          }
+          invokeRestart("muffleWarning")
+          return(NULL)
+        },
+        message=function(m) {
+          msg <- conditionMessage(m)
+          if (grepl("matrix is singular", msg, ignore.case=TRUE)) {
+            failures$OTHER <- failures$OTHER + 1
+          }
+          invokeRestart("muffleMessage")
+          return(NULL)
+        }
+      )
       
       if (!is.null(res_i)) {
         result[[i]] <- res_i
@@ -474,6 +512,7 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=
   
   return(result)
 }
+
 
 
 	
