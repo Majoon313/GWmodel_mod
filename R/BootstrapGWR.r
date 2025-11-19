@@ -371,9 +371,7 @@ generate.lm.data <- function(obj,W,dep.var) {
 		}
 					
 library(progress)
-parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, ...) {
-  successes <- 0
-  failures  <- 0
+parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NULL, ...) {
   result <- NULL
   print("parametric.bs")
   
@@ -386,39 +384,25 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, 
     if (!is.null(report) & (i %% report == 0)) 
       cat(sprintf("Iteration %5d\n", i))
     
-    # Daten generieren (ohne tryCatch)
+    # Daten generieren
     dset <- generate.lm.data(obj, W, dep.var)
     if (!is.null(dset)) {
-      sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID=FALSE)
+      sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID = FALSE)
       
-      # Konsolenausgaben abfangen
-      out <- capture.output({
-        res_i <- bsfun(sp.dset, ...)
-      })
-      
-      # Singularitätsfehler zählen
-      if (any(grepl("matrix is singular", out, ignore.case=TRUE))) {
-        failures <- failures + 1
-      } else {
-        result <- rbind(result, res_i)
-        successes <- successes + 1
-      }
+      # Direkter Aufruf ohne capturing
+      res_i <- bsfun(sp.dset, ...)
+      result <- rbind(result, res_i)
     }
     pb$tick()
   }
   
-  cat("Erfolgreiche Iterationen:", successes, "von", R, "\n")
-  cat("Singularitätsfehler:", failures, "\n")
   return(result)
 }
 
 
 
-
 ####Localized statistic	
-parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, ...) {
-  successes <- 0
-  failures  <- 0
+parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NULL, ...) {
   result <- list()
   print("parametric.bs.local")
   
@@ -433,26 +417,18 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=
     
     dset <- generate.lm.data(obj, W, dep.var)
     if (!is.null(dset)) {
-      sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID=FALSE)
+      sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID = FALSE)
       
-      out <- capture.output({
-        res_i <- bsfun(sp.dset, ...)
-      })
-      
-      if (any(grepl("matrix is singular", out, ignore.case=TRUE))) {
-        failures <- failures + 1
-      } else {
-        result[[i]] <- res_i
-        successes <- successes + 1
-      }
+      # Direkter Aufruf ohne capturing und ohne Fehlerzählung
+      res_i <- bsfun(sp.dset, ...)
+      result[[i]] <- res_i
     }
     pb$tick()
   }
   
-  cat("Erfolgreiche Iterationen:", successes, "von", R, "\n")
-  cat("Singularitätsfehler:", failures, "\n")
   return(result)
 }
+
 
 
 
