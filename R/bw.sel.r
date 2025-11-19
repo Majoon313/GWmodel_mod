@@ -338,7 +338,7 @@ gwr.aic<-function(bw, X, Y, kernel="bisquare",adaptive=FALSE, dp.locat, p=2, the
               cat("Fehler:", conditionMessage(msg), "\n")
               print(msg)
               message("Fehler in Iteration ", i, ": ", conditionMessage(msg), immediate. = TRUE)
-              log.dt <- rbind(log.df, data.table(iter = i,
+              log.dt <- rbind(log.dt, data.table(iter = i,
                                                  msg = conditionMessage(msg),
                                                  stringsAsFactors = FALSE))
         } #printing so I can capture output 
