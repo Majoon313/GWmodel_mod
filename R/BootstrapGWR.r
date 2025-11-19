@@ -369,10 +369,11 @@ generate.lm.data <- function(obj,W,dep.var) {
 		errorsarlm=generate.data.errorsarlm(obj,W,dep.var), 
 		spautolm=generate.data.smalm(obj,W,dep.var))
 		}
+					
 library(progress)
 parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, ...) {
-  successes <- 0   # Zähler für erfolgreiche Iterationen
-  failures  <- list(MLR=0, ERR=0, SMA=0, LAG=0, OTHER=0)  # Fehlerzähler inkl. OTHER
+  successes <- 0
+  failures  <- 0
   result <- NULL
   print("parametric.bs")
   
@@ -385,55 +386,20 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, 
     if (!is.null(report) & (i %% report == 0)) 
       cat(sprintf("Iteration %5d\n", i))
     
-    dset <- tryCatch({
-      generate.lm.data(obj, W, dep.var)
-    }, error = function(e) {
-      message(sprintf("Iteration %d failed in generate.lm.data: %s", i, e$message))
-      failures$OTHER <- failures$OTHER + 1
-      return(NULL)
-    })
-    
+    # Daten generieren (ohne tryCatch)
+    dset <- generate.lm.data(obj, W, dep.var)
     if (!is.null(dset)) {
       sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID=FALSE)
       
       # Konsolenausgaben abfangen
-      out <- capture.output(
-        res_i <- tryCatch(
-          bsfun(sp.dset, ...),
-          error=function(e) {
-            msg <- e$message
-            if (grepl("MLR", msg, ignore.case=TRUE)) failures$MLR <- failures$MLR + 1
-            else if (grepl("ERR", msg, ignore.case=TRUE)) failures$ERR <- failures$ERR + 1
-            else if (grepl("SMA", msg, ignore.case=TRUE)) failures$SMA <- failures$SMA + 1
-            else if (grepl("LAG", msg, ignore.case=TRUE)) failures$LAG <- failures$LAG + 1
-            else failures$OTHER <- failures$OTHER + 1
-            return(NULL)
-          },
-          warning=function(w) {
-            msg <- conditionMessage(w)
-            if (grepl("matrix is singular", msg, ignore.case=TRUE)) {
-              failures$OTHER <- failures$OTHER + 1
-            }
-            invokeRestart("muffleWarning")
-            return(NULL)
-          },
-          message=function(m) {
-            msg <- conditionMessage(m)
-            if (grepl("matrix is singular", msg, ignore.case=TRUE)) {
-              failures$OTHER <- failures$OTHER + 1
-            }
-            invokeRestart("muffleMessage")
-            return(NULL)
-          }
-        )
-      )
+      out <- capture.output({
+        res_i <- bsfun(sp.dset, ...)
+      })
       
-      # Konsolenausgaben nach "matrix is singular" durchsuchen
+      # Singularitätsfehler zählen
       if (any(grepl("matrix is singular", out, ignore.case=TRUE))) {
-        failures$OTHER <- failures$OTHER + 1
-      }
-      
-      if (!is.null(res_i)) {
+        failures <- failures + 1
+      } else {
         result <- rbind(result, res_i)
         successes <- successes + 1
       }
@@ -441,19 +407,18 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, 
     pb$tick()
   }
   
-  cat("Gesamt erfolgreiche Iterationen:", successes, "von", R, "\n")
-  cat("Fehlerübersicht pro Modelltyp:\n")
-  print(failures)
-  
+  cat("Erfolgreiche Iterationen:", successes, "von", R, "\n")
+  cat("Singularitätsfehler:", failures, "\n")
   return(result)
 }
 
 
 
+
 ####Localized statistic	
 parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=NULL, ...) {
-  successes <- 0   # Zähler für erfolgreiche Iterationen
-  failures  <- list(MLR=0, ERR=0, SMA=0, LAG=0, OTHER=0)  # Fehlerzähler inkl. OTHER
+  successes <- 0
+  failures  <- 0
   result <- list()
   print("parametric.bs.local")
   
@@ -466,55 +431,17 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=
     if (!is.null(report) & (i %% report == 0)) 
       cat(sprintf("Iteration %5d\n", i))
     
-    dset <- tryCatch({
-      generate.lm.data(obj, W, dep.var)
-    }, error = function(e) {
-      message(sprintf("Iteration %d failed in generate.lm.data: %s", i, e$message))
-      failures$OTHER <- failures$OTHER + 1
-      return(NULL)
-    })
-    
+    dset <- generate.lm.data(obj, W, dep.var)
     if (!is.null(dset)) {
       sp.dset <- SpatialPointsDataFrame(dp.locat, dset, match.ID=FALSE)
       
-      # Konsolenausgaben abfangen
-      out <- capture.output(
-        res_i <- tryCatch(
-          bsfun(sp.dset, ...),
-          error=function(e) {
-            msg <- e$message
-            if (grepl("MLR", msg, ignore.case=TRUE)) failures$MLR <- failures$MLR + 1
-            else if (grepl("ERR", msg, ignore.case=TRUE)) failures$ERR <- failures$ERR + 1
-            else if (grepl("SMA", msg, ignore.case=TRUE)) failures$SMA <- failures$SMA + 1
-            else if (grepl("LAG", msg, ignore.case=TRUE)) failures$LAG <- failures$LAG + 1
-            else failures$OTHER <- failures$OTHER + 1
-            return(NULL)
-          },
-          warning=function(w) {
-            msg <- conditionMessage(w)
-            if (grepl("matrix is singular", msg, ignore.case=TRUE)) {
-              failures$OTHER <- failures$OTHER + 1
-            }
-            invokeRestart("muffleWarning")
-            return(NULL)
-          },
-          message=function(m) {
-            msg <- conditionMessage(m)
-            if (grepl("matrix is singular", msg, ignore.case=TRUE)) {
-              failures$OTHER <- failures$OTHER + 1
-            }
-            invokeRestart("muffleMessage")
-            return(NULL)
-          }
-        )
-      )
+      out <- capture.output({
+        res_i <- bsfun(sp.dset, ...)
+      })
       
-      # Konsolenausgaben nach "matrix is singular" durchsuchen
       if (any(grepl("matrix is singular", out, ignore.case=TRUE))) {
-        failures$OTHER <- failures$OTHER + 1
-      }
-      
-      if (!is.null(res_i)) {
+        failures <- failures + 1
+      } else {
         result[[i]] <- res_i
         successes <- successes + 1
       }
@@ -522,10 +449,8 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R=100, report=
     pb$tick()
   }
   
-  cat("Gesamt erfolgreiche Iterationen:", successes, "von", R, "\n")
-  cat("Fehlerübersicht pro Modelltyp:\n")
-  print(failures)
-  
+  cat("Erfolgreiche Iterationen:", successes, "von", R, "\n")
+  cat("Singularitätsfehler:", failures, "\n")
   return(result)
 }
 
