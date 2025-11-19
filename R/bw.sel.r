@@ -326,6 +326,7 @@ gwr.aic<-function(bw, X, Y, kernel="bisquare",adaptive=FALSE, dp.locat, p=2, the
   } else {
     s_hat <- numeric(2)
     betas <- matrix(nrow = dp.n, ncol = var.n)
+    log.dt<-data.table()
     for (i in 1:dp.n) {
       if (DM.given) dist.vi <- dMat[,i]
       else dist.vi <- gw.dist(dp.locat=dp.locat, focus=i, p=p, theta=theta, longlat=longlat)
@@ -333,8 +334,13 @@ gwr.aic<-function(bw, X, Y, kernel="bisquare",adaptive=FALSE, dp.locat, p=2, the
       res<- try(gw_reg(X,Y,W.i,TRUE,i))
       #******************
       if (inherits(res, "try-error")) {
-            msg <- attr(res, "condition")
-            print(msg)
+           msg <- attr(res, "condition")
+              cat("Fehler:", conditionMessage(msg), "\n")
+              print(msg)
+              message("Fehler in Iteration ", i, ": ", conditionMessage(msg), immediate. = TRUE)
+              log.dt <- rbind(log.df, data.table(iter = i,
+                                                 msg = conditionMessage(msg),
+                                                 stringsAsFactors = FALSE))
         } #printing so I can capture output 
       #******************
       if(!inherits(res, "try-error")) {
@@ -358,6 +364,7 @@ gwr.aic<-function(bw, X, Y, kernel="bisquare",adaptive=FALSE, dp.locat, p=2, the
     else cat("Fixed bandwidth:", bw, "AICc value:", AICc.value, "\n")
   }
   AICc.value
+  write_feather(log.dt,paste0(getwd(),"/log"))
 }
 
 ####Calculate the BIC with a given bandwidth
