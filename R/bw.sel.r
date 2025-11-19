@@ -326,7 +326,8 @@ gwr.aic<-function(bw, X, Y, kernel="bisquare",adaptive=FALSE, dp.locat, p=2, the
   } else {
     s_hat <- numeric(2)
     betas <- matrix(nrow = dp.n, ncol = var.n)
-    log.dt<-data.table()
+    log.dt <- data.table(iter = integer(),
+                     msg   = character())
     for (i in 1:dp.n) {
       if (DM.given) dist.vi <- dMat[,i]
       else dist.vi <- gw.dist(dp.locat=dp.locat, focus=i, p=p, theta=theta, longlat=longlat)
