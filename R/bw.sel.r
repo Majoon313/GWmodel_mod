@@ -331,6 +331,12 @@ gwr.aic<-function(bw, X, Y, kernel="bisquare",adaptive=FALSE, dp.locat, p=2, the
       else dist.vi <- gw.dist(dp.locat=dp.locat, focus=i, p=p, theta=theta, longlat=longlat)
       W.i <- gw.weight(dist.vi,bw,kernel,adaptive)
       res<- try(gw_reg(X,Y,W.i,TRUE,i))
+      #******************
+      if (inherits(res, "try-error")) {
+            msg <- attr(res, "condition")
+            print(msg)
+        } #printing so I can capture output 
+      #******************
       if(!inherits(res, "try-error")) {
         si <- res[[2]]
         s_hat[1] = s_hat[1] + si[i]
