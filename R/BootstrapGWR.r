@@ -389,7 +389,7 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NU
   
  pb <- progress_bar$new(
     total = R,
-    format = paste0("Bootstrap [", model.name, "] [:bar] :percent | Iteration :current/:total | eta: :eta")
+    format = paste0("Bootstrap [", model_type, "] [:bar] :percent | Iteration :current/:total | eta: :eta")
   )
   
   for (i in 1:R) {
@@ -422,7 +422,7 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, repor
   
    pb <- progress_bar$new(
     total = R,
-    format = paste0("Bootstrap [", model.name, "] [:bar] :percent | Iteration :current/:total | eta: :eta")
+    format = paste0("Bootstrap [", model_type, "] [:bar] :percent | Iteration :current/:total | eta: :eta")
   )
   
   for (i in 1:R) {
