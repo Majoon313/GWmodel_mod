@@ -391,7 +391,7 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NU
   sink(con, type = "message")
   
   message("\n--- Starte parametric.bs für Modell:", model_type, "---\n")
-  print("parametric.bs")
+  print(paste0("parametric.bs for ",model_type))
   
  pb <- progress_bar$new(
     total = R,
@@ -437,8 +437,9 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, repor
   sink(con, type = "message")
 	
   message("\n--- Starte parametric.bs.local für Modell:", model_type , "---\n")
-  print("parametric.bs.local")
-  
+    
+	print(paste0("parametric.bs.local for ",model_type))
+	
    pb <- progress_bar$new(
     total = R,
     format = paste0("Bootstrap [", model_type, "] [:bar] :percent | Iteration :current/:total | eta: :eta")
