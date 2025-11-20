@@ -383,7 +383,13 @@ get_model_type <- function(obj) {
 library(progress)
 parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NULL, ...) {
   result <- NULL
-  model_type <- get_model_type(obj)
+
+	model_type <- get_model_type(obj)
+	
+	# stderr sink starten
+  con <- file(paste0("parametric.bs_errors_", model_type, ".txt"), open = "wt")
+  sink(con, type = "message")
+  
   message("\n--- Starte parametric.bs für Modell:", model_type, "---\n")
   print("parametric.bs")
   
@@ -407,7 +413,15 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NU
     }
     pb$tick()
   }
+
+  #Sink schließen
+  sink(NULL, type = "message")
+  close(con)
   
+  # Logdatei einlesen und Fehler zählen
+  log_lines <- readLines(paste0("parametric.bs_errors_", model_type, ".txt"), warn = FALSE)
+  singular_count <- sum(grepl("matrix is singular", log_lines, ignore.case = TRUE))
+	
   return(result)
 }
 
@@ -417,6 +431,11 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NU
 parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NULL, ...) {
   result <- list()
   model_type <- get_model_type(obj)
+
+		# stderr sink starten
+  con <- file(paste0("parametric.bs.local_errors_", model_type, ".txt"), open = "wt")
+  sink(con, type = "message")
+	
   message("\n--- Starte parametric.bs.local für Modell:", model_type , "---\n")
   print("parametric.bs.local")
   
@@ -439,7 +458,15 @@ parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, repor
     }
     pb$tick()
   }
+
+  #Sink schließen
+  sink(NULL, type = "message")
+  close(con)
   
+  # Logdatei einlesen und Fehler zählen
+  log_lines <- readLines(paste0("parametric.bs.local_errors_", model_type, ".txt"), warn = FALSE)
+  singular_count <- sum(grepl("matrix is singular", log_lines, ignore.case = TRUE))
+	
   return(result)
 }
 
