@@ -373,11 +373,12 @@ generate.lm.data <- function(obj,W,dep.var) {
 library(progress)
 parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NULL, ...) {
   result <- NULL
+  message("\n--- Starte parametric.bs für Modell:", model.name, "---\n")
   print("parametric.bs")
   
-  pb <- progress_bar$new(
+ pb <- progress_bar$new(
     total = R,
-    format = "Bootstrap [:bar] :percent | Iteration :current/:total | eta: :eta"
+    format = paste0("Bootstrap [", model.name, "] [:bar] :percent | Iteration :current/:total | eta: :eta")
   )
   
   for (i in 1:R) {
@@ -404,11 +405,12 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NU
 ####Localized statistic	
 parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NULL, ...) {
   result <- list()
+  message("\n--- Starte parametric.bs.local für Modell:", model.name, "---\n")
   print("parametric.bs.local")
   
-  pb <- progress_bar$new(
+   pb <- progress_bar$new(
     total = R,
-    format = "Bootstrap [:bar] :percent | Iteration :current/:total | eta: :eta"
+    format = paste0("Bootstrap [", model.name, "] [:bar] :percent | Iteration :current/:total | eta: :eta")
   )
   
   for (i in 1:R) {
