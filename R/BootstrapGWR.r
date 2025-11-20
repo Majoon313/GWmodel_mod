@@ -369,11 +369,22 @@ generate.lm.data <- function(obj,W,dep.var) {
 		errorsarlm=generate.data.errorsarlm(obj,W,dep.var), 
 		spautolm=generate.data.smalm(obj,W,dep.var))
 		}
+
+get_model_type <- function(obj) {
+  if (inherits(obj, "lm")) return("OLS")
+  if (inherits(obj, "spautolm") || inherits(obj, "Spautolm")) return("SMA")
+  if (inherits(obj, "sarlm") || inherits(obj, "Sarlm")) {
+    if (!is.null(obj$rho)) return("LAG")
+    if (!is.null(obj$lambda)) return("ERR")
+  }
+  stop("Unbekannter Modelltyp")
+}
 					
 library(progress)
 parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NULL, ...) {
   result <- NULL
-  message("\n--- Starte parametric.bs für Modell:", model.name, "---\n")
+  model_type <- get_model_type(obj)
+  message("\n--- Starte parametric.bs für Modell:", model_type, "---\n")
   print("parametric.bs")
   
  pb <- progress_bar$new(
@@ -405,7 +416,8 @@ parametric.bs <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NU
 ####Localized statistic	
 parametric.bs.local <- function(obj, dep.var, dp.locat, W, bsfun, R = 100, report = NULL, ...) {
   result <- list()
-  message("\n--- Starte parametric.bs.local für Modell:", model.name, "---\n")
+  model_type <- get_model_type(obj)
+  message("\n--- Starte parametric.bs.local für Modell:", model_type , "---\n")
   print("parametric.bs.local")
   
    pb <- progress_bar$new(
