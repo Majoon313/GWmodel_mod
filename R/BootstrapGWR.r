@@ -3,7 +3,7 @@
 #R: number of random samples
 gwr.bootstrap <- function(formula, data, kernel="bisquare",approach="AIC", R=99,k.nearneigh=4,
                           adaptive=FALSE, p=2, theta=0, longlat=FALSE,dMat,verbose=FALSE,
-						  parallel.method = FALSE, parallel.arg = NULL)
+						  parallel.method = FALSE, parallel.arg = NULL,test_k.nearneigh_val=FALSE)
 {
   ##Record the start time
   timings <- list()
@@ -74,31 +74,50 @@ gwr.bootstrap <- function(formula, data, kernel="bisquare",approach="AIC", R=99,
   } 
   ###################
 	#####LM model
+	if(test_k.nearneigh_val==FALSE){
     ols.model <- lm(formula, data)
     err.model <- errorsarlm(formula,data,listw=glw,method='spam')
 	dep.var <- deparse(eval(err.model$call$formula)[[2]])
     sma.model <- spautolm(formula,data,listw=glw,family='SMA')
     sma.model$model <- ols.model$model # As sma returns NULL otherwise
     lag.model <- lagsarlm(formula,data,listw=glw,method='spam')
-  
+  }else{
+	lag.model <- lagsarlm(formula,data,listw=glw,method='spam')
+		}
      ###Basic GWR model
    bw <- bw.gwr3(formula,data=sp.data,approach=approach,kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose, parallel.method=parallel.method,parallel.arg=parallel.arg)
 	 gwr.model <- gwr.basic(formula,data=sp.data,bw=bw,kernel=kernel, adaptive=adaptive,dMat=dMat, parallel.method=parallel.method,parallel.arg=parallel.arg) 
    #####
 	# For modified test statistic
+		if(test_k.nearneigh_val==FALSE){
     ols.bst <- parametric.bs(ols.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
 	err.bst <- parametric.bs(err.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)	
 	sma.bst <- parametric.bs(sma.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
     lag.bst <- parametric.bs(lag.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-    sp.data <- SpatialPointsDataFrame(dp.locat,data, match.ID=FALSE)
+    }else{
+		    lag.bst <- parametric.bs(lag.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+	}
+			sp.data <- SpatialPointsDataFrame(dp.locat,data, match.ID=FALSE)
 	actual.t = gwrtvar(sp.data, formula,approach, kernel, adaptive,dMat,verbose=verbose, parallel.method=parallel.method,parallel.arg=parallel.arg) 
+			if(test_k.nearneigh_val==FALSE){
 	results.t = rbind(ci.bs(ols.bst,0.95),pval.bs(ols.bst,actual.t),				  
 				  ci.bs(err.bst,0.95),pval.bs(err.bst,actual.t),
 				  ci.bs(sma.bst,0.95),pval.bs(sma.bst,actual.t),
                   ci.bs(lag.bst,0.95),pval.bs(lag.bst,actual.t))
+				}else{
+				results.t = rbind(
+                  ci.bs(lag.bst,0.95),pval.bs(lag.bst,actual.t))
+				}
+
+				if(test_k.nearneigh_val==FALSE){
 	rownames(results.t) = c("   Modified statistic for MLR at 95% level","   p value to accept null hypothese(MLR)","   Modified statistic for ERR at 95%","   p value to accept null hypothese (ERR)",
 	"   Modified statistic for SMA at 95% level","   p value to accept null hypothese (SMA)","   Modified statistic for LAG at 95% level","   p value to accept null hypothese (LAG)")
+					}else{
+					rownames(results.t) = c(" Modified statistic for LAG at 95% level","   p value to accept null hypothese (LAG)")
+					}
 	###Localized test statistic
+
+		if(test_k.nearneigh_val==FALSE){
 	err.bsm <- parametric.bs.local(err.model,dep.var,dp.locat,W.adj,gwrt.err,R=R,report=n.sim.rep,formula=formula, glw, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
 	mlr.bsm <- parametric.bs.local(ols.model,dep.var,dp.locat,W.adj,gwrt.mlr,R=R,report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
 	sma.bsm <- parametric.bs.local(sma.model,dep.var,dp.locat,W.adj,gwrt.sma,R=R,report=n.sim.rep,formula=formula, glw,approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
@@ -143,7 +162,10 @@ gwr.bootstrap <- function(formula, data, kernel="bisquare",approach="AIC", R=99,
 	  sma.p.local <- cbind(sma.p.local, pval.bs(sma.q.vec,actual.m.sma[,i]))
     lag.p.local <- cbind(lag.p.local, pval.bs(lag.q.vec,actual.m.lag[,i]))
 	}
-	
+	}else{
+			  lag.bsm <- parametric.bs.local(lag.model,dep.var,dp.locat,W.adj,gwrt.lag,R=R,report=n.sim.rep,formula=formula, glw,approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+				return()
+		}
 
   #print()
   
