@@ -739,8 +739,6 @@ generate.lm.data <- function(obj, W, dep.var, ref_models = c("OLS","ERR","SMA","
       data.frame(x)
     }
   }
-}
-
 										
 # What kind of model is it
 	# model.type <- function(obj) {
@@ -799,7 +797,7 @@ generate.lm.data <- function(obj, W, dep.var, ref_models = c("OLS","ERR","SMA","
 		lagsarlm=generate.data.lagsarlm(obj,W,dep.var),
 		errorsarlm=generate.data.errorsarlm(obj,W,dep.var), 
 		spautolm=generate.data.smalm(obj,W,dep.var))
-		}
+		} #generate.lm.data ending???
 
 get_model_type <- function(obj) {
   if (inherits(obj, "lm")) return("OLS")
