@@ -83,6 +83,7 @@ gwr.bootstrap <- function(formula, data, kernel="bisquare",approach="AIC", R=99,
     lag.model <- lagsarlm(formula,data,listw=glw,method='spam')
   }else{
 	lag.model <- lagsarlm(formula,data,listw=glw,method='spam')
+	dep.var <- deparse(eval(lag.model$call$formula)[[2]])
 		}
      ###Basic GWR model
    bw <- bw.gwr3(formula,data=sp.data,approach=approach,kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose, parallel.method=parallel.method,parallel.arg=parallel.arg)
