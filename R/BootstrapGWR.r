@@ -3,7 +3,7 @@
 #R: number of random samples
 gwr.bootstrap <- function(formula, data, kernel="bisquare",approach="AIC", R=99,k.nearneigh=4,
                           adaptive=FALSE, p=2, theta=0, longlat=FALSE,dMat,verbose=FALSE,
-						  parallel.method = FALSE, parallel.arg = NULL,test_k.nearneigh_val=FALSE)
+						  parallel.method = FALSE, parallel.arg = NULL,ref_models=c("OLS","ERR","SMA","LAG"))
 {
   ##Record the start time
   timings <- list()
@@ -74,106 +74,357 @@ gwr.bootstrap <- function(formula, data, kernel="bisquare",approach="AIC", R=99,
   } 
   ###################
 	#####LM model
-	if(test_k.nearneigh_val==FALSE){
-    ols.model <- lm(formula, data)
-    err.model <- errorsarlm(formula,data,listw=glw,method='spam')
-	dep.var <- deparse(eval(err.model$call$formula)[[2]])
-    sma.model <- spautolm(formula,data,listw=glw,family='SMA')
-    sma.model$model <- ols.model$model # As sma returns NULL otherwise
-    lag.model <- lagsarlm(formula,data,listw=glw,method='spam')
-  }else{
-	lag.model <- lagsarlm(formula,data,listw=glw,method='spam')
-	dep.var <- deparse(eval(lag.model$call$formula)[[2]])
-		}
+	      # if(test_k.nearneigh_val==FALSE){
+      #   ols.model <- lm(formula, data)
+      #   err.model <- errorsarlm(formula,data,listw=glw,method='spam')
+      #   dep.var <- deparse(eval(err.model$call$formula)[[2]])
+      #   sma.model <- spautolm(formula,data,listw=glw,family='SMA')
+      #   sma.model$model <- ols.model$model # As sma returns NULL otherwise
+      #   lag.model <- lagsarlm(formula,data,listw=glw,method='spam')
+      # }else{
+      #   lag.model <- lagsarlm(formula,data,listw=glw,method='spam')
+      #   dep.var <- deparse(eval(lag.model$call$formula)[[2]])
+      # }
+
+if("OLS" %in% ref_models){
+  ols.model <- lm(formula, data)
+}
+
+if("ERR" %in% ref_models){
+  err.model <- errorsarlm(formula, data, listw = glw, method = "spam")
+  dep.var <- deparse(eval(err.model$call$formula)[[2]])
+}
+
+if("SMA" %in% ref_models){
+  sma.model <- spautolm(formula, data, listw = glw, family = "SMA")
+  # SMA liefert kein model-Frame zurück, daher Workaround:
+  if(exists("ols.model")) sma.model$model <- ols.model$model
+}
+
+if("LAG" %in% ref_models){
+  lag.model <- lagsarlm(formula, data, listw = glw, method = "spam")
+  dep.var <- deparse(eval(lag.model$call$formula)[[2]])
+}
+	
      ###Basic GWR model
    bw <- bw.gwr3(formula,data=sp.data,approach=approach,kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose, parallel.method=parallel.method,parallel.arg=parallel.arg)
 	 gwr.model <- gwr.basic(formula,data=sp.data,bw=bw,kernel=kernel, adaptive=adaptive,dMat=dMat, parallel.method=parallel.method,parallel.arg=parallel.arg) 
    #####
-	# For modified test statistic
-		if(test_k.nearneigh_val==FALSE){
-    ols.bst <- parametric.bs(ols.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-	err.bst <- parametric.bs(err.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)	
-	sma.bst <- parametric.bs(sma.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-    lag.bst <- parametric.bs(lag.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-    }else{
-		    lag.bst <- parametric.bs(lag.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-	}
+	      # # For modified test statistic
+      # if(test_k.nearneigh_val==FALSE){
+      #   ols.bst <- parametric.bs(ols.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   err.bst <- parametric.bs(err.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)	
+      #   sma.bst <- parametric.bs(sma.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   lag.bst <- parametric.bs(lag.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      # }else{
+      #   lag.bst <- parametric.bs(lag.model,dep.var,dp.locat,W.adj,gwrtvar,R=R, report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      # }
+
+if("OLS" %in% ref_models){
+  ols.bst <- parametric.bs(
+    ols.model, dep.var, dp.locat, W.adj, gwrtvar,
+    R = R, report = n.sim.rep, formula = formula,
+    approach = approach, kernel = kernel, adaptive = adaptive,
+    dMat = dMat, verbose = verbose,
+    parallel.method = parallel.method, parallel.arg = parallel.arg
+  )
+}
+
+if("ERR" %in% ref_models){
+  err.bst <- parametric.bs(
+    err.model, dep.var, dp.locat, W.adj, gwrtvar,
+    R = R, report = n.sim.rep, formula = formula,
+    approach = approach, kernel = kernel, adaptive = adaptive,
+    dMat = dMat, verbose = verbose,
+    parallel.method = parallel.method, parallel.arg = parallel.arg
+  )
+}
+
+if("SMA" %in% ref_models){
+  sma.bst <- parametric.bs(
+    sma.model, dep.var, dp.locat, W.adj, gwrtvar,
+    R = R, report = n.sim.rep, formula = formula,
+    approach = approach, kernel = kernel, adaptive = adaptive,
+    dMat = dMat, verbose = verbose,
+    parallel.method = parallel.method, parallel.arg = parallel.arg
+  )
+}
+
+if("LAG" %in% ref_models){
+  lag.bst <- parametric.bs(
+    lag.model, dep.var, dp.locat, W.adj, gwrtvar,
+    R = R, report = n.sim.rep, formula = formula,
+    approach = approach, kernel = kernel, adaptive = adaptive,
+    dMat = dMat, verbose = verbose,
+    parallel.method = parallel.method, parallel.arg = parallel.arg
+  )
+}
+	
 			sp.data <- SpatialPointsDataFrame(dp.locat,data, match.ID=FALSE)
 	actual.t = gwrtvar(sp.data, formula,approach, kernel, adaptive,dMat,verbose=verbose, parallel.method=parallel.method,parallel.arg=parallel.arg) 
-			if(test_k.nearneigh_val==FALSE){
-	results.t = rbind(ci.bs(ols.bst,0.95),pval.bs(ols.bst,actual.t),				  
-				  ci.bs(err.bst,0.95),pval.bs(err.bst,actual.t),
-				  ci.bs(sma.bst,0.95),pval.bs(sma.bst,actual.t),
-                  ci.bs(lag.bst,0.95),pval.bs(lag.bst,actual.t))
-				}else{
-				results.t = rbind(
-                  ci.bs(lag.bst,0.95),pval.bs(lag.bst,actual.t))
-				}
+			      # if(test_k.nearneigh_val==FALSE){
+      #   results.t = rbind(ci.bs(ols.bst,0.95),pval.bs(ols.bst,actual.t),				  
+      #                     ci.bs(err.bst,0.95),pval.bs(err.bst,actual.t),
+      #                     ci.bs(sma.bst,0.95),pval.bs(sma.bst,actual.t),
+      #                     ci.bs(lag.bst,0.95),pval.bs(lag.bst,actual.t))
+      # }else{
+      #   results.t = rbind(
+      #     ci.bs(lag.bst,0.95),pval.bs(lag.bst,actual.t))
+      # }
 
-				if(test_k.nearneigh_val==FALSE){
-	rownames(results.t) = c("   Modified statistic for MLR at 95% level","   p value to accept null hypothese(MLR)","   Modified statistic for ERR at 95%","   p value to accept null hypothese (ERR)",
-	"   Modified statistic for SMA at 95% level","   p value to accept null hypothese (SMA)","   Modified statistic for LAG at 95% level","   p value to accept null hypothese (LAG)")
-					}else{
-					rownames(results.t) = c(" Modified statistic for LAG at 95% level","   p value to accept null hypothese (LAG)")
-					}
+	results.t <- NULL
+if("OLS" %in% ref_models){
+  results.t <- rbind(
+    results.t,
+    ci.bs(ols.bst, 0.95),
+    pval.bs(ols.bst, actual.t)
+  )
+}
+
+if("ERR" %in% ref_models){
+  results.t <- rbind(
+    results.t,
+    ci.bs(err.bst, 0.95),
+    pval.bs(err.bst, actual.t)
+  )
+}
+
+if("SMA" %in% ref_models){
+  results.t <- rbind(
+    results.t,
+    ci.bs(sma.bst, 0.95),
+    pval.bs(sma.bst, actual.t)
+  )
+}
+
+if("LAG" %in% ref_models){
+  results.t <- rbind(
+    results.t,
+    ci.bs(lag.bst, 0.95),
+    pval.bs(lag.bst, actual.t)
+  )
+}
+
+				      # if(test_k.nearneigh_val==FALSE){
+      #   rownames(results.t) = c("   Modified statistic for MLR at 95% level","   p value to accept null hypothese(MLR)","   Modified statistic for ERR at 95%","   p value to accept null hypothese (ERR)",
+      #                           "   Modified statistic for SMA at 95% level","   p value to accept null hypothese (SMA)","   Modified statistic for LAG at 95% level","   p value to accept null hypothese (LAG)")
+      # }else{
+      #   rownames(results.t) = c(" Modified statistic for LAG at 95% level","   p value to accept null hypothese (LAG)")
+      # }
+
+	labels <- character()
+
+if("OLS" %in% ref_models){
+  labels <- c(labels,
+              "Modified statistic for MLR at 95% level",
+              "p value to accept null hypothese (MLR)")
+}
+
+if("ERR" %in% ref_models){
+  labels <- c(labels,
+              "Modified statistic for ERR at 95%",
+              "p value to accept null hypothese (ERR)")
+}
+
+if("SMA" %in% ref_models){
+  labels <- c(labels,
+              "Modified statistic for SMA at 95% level",
+              "p value to accept null hypothese (SMA)")
+}
+
+if("LAG" %in% ref_models){
+  labels <- c(labels,
+              "Modified statistic for LAG at 95% level",
+              "p value to accept null hypothese (LAG)")
+}
+
+rownames(results.t) <- labels
 	###Localized test statistic
 
-		if(test_k.nearneigh_val==FALSE){
-	err.bsm <- parametric.bs.local(err.model,dep.var,dp.locat,W.adj,gwrt.err,R=R,report=n.sim.rep,formula=formula, glw, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-	mlr.bsm <- parametric.bs.local(ols.model,dep.var,dp.locat,W.adj,gwrt.mlr,R=R,report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-	sma.bsm <- parametric.bs.local(sma.model,dep.var,dp.locat,W.adj,gwrt.sma,R=R,report=n.sim.rep,formula=formula, glw,approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-  lag.bsm <- parametric.bs.local(lag.model,dep.var,dp.locat,W.adj,gwrt.lag,R=R,report=n.sim.rep,formula=formula, glw,approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-  actual.m.err <- gwrt.err(sp.data,formula,glw,approach, kernel, adaptive,dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-	actual.m.mlr <- gwrt.mlr(sp.data,formula,approach, kernel, adaptive,dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-	actual.m.sma <- gwrt.sma(sp.data,formula,glw,approach, kernel, adaptive,dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-  actual.m.lag <- gwrt.lag(sp.data,formula,glw,approach, kernel, adaptive,dMat,verbose=verbose, parallel.method=parallel.method,parallel.arg=parallel.arg)
-	indep.vars <- names(ols.model$coefficients)
-	var.n <- length(indep.vars)
-	idx1 <- match("(Intercept)",indep.vars)
-    if(!is.na(idx1))
-      indep.vars[idx1] <-"Intercept"
-    colnames(results.t) <- indep.vars	  
-	err.t.local <- c()
-	mlr.t.local <- c()
-	sma.t.local <- c()
-  lag.t.local <- c()
-	err.p.local <- c()
-	mlr.p.local <- c()
-	sma.p.local <- c()
-  lag.p.local <- c()
-	for(i in 1:var.n)
-	{
-	  err.q.vec <- c()
-	  mlr.q.vec <- c()
-	  sma.q.vec <- c()
-    lag.q.vec <- c()
-	  for(j in 1:R)
-	  {
-	    err.q.vec <- rbind(err.q.vec, err.bsm[[j]][,i])
-	    mlr.q.vec <- rbind(mlr.q.vec, mlr.bsm[[j]][,i])
-	    sma.q.vec <- rbind(sma.q.vec, sma.bsm[[j]][,i])
-      lag.q.vec <- rbind(lag.q.vec, lag.bsm[[j]][,i])
-	  }
-	  err.t.local <- cbind(err.t.local, ci.bs(err.q.vec,0.95))
-	  mlr.t.local <- cbind(mlr.t.local, ci.bs(mlr.q.vec,0.95))
-	  sma.t.local <- cbind(sma.t.local, ci.bs(sma.q.vec,0.95))
-    lag.t.local <- cbind(lag.t.local, ci.bs(lag.q.vec,0.95))
-	  err.p.local <- cbind(err.p.local, pval.bs(err.q.vec,actual.m.err[,i]))
-	  mlr.p.local <- cbind(mlr.p.local, pval.bs(mlr.q.vec,actual.m.mlr[,i]))
-	  sma.p.local <- cbind(sma.p.local, pval.bs(sma.q.vec,actual.m.sma[,i]))
-    lag.p.local <- cbind(lag.p.local, pval.bs(lag.q.vec,actual.m.lag[,i]))
-	}
-	}else{
-			  lag.bsm <- parametric.bs.local(lag.model,dep.var,dp.locat,W.adj,gwrt.lag,R=R,report=n.sim.rep,formula=formula, glw,approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
-				return()
-		}
+	      # if(test_k.nearneigh_val==FALSE){
+      #   err.bsm <- parametric.bs.local(err.model,dep.var,dp.locat,W.adj,gwrt.err,R=R,report=n.sim.rep,formula=formula, glw, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   mlr.bsm <- parametric.bs.local(ols.model,dep.var,dp.locat,W.adj,gwrt.mlr,R=R,report=n.sim.rep,formula=formula, approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   sma.bsm <- parametric.bs.local(sma.model,dep.var,dp.locat,W.adj,gwrt.sma,R=R,report=n.sim.rep,formula=formula, glw,approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   lag.bsm <- parametric.bs.local(lag.model,dep.var,dp.locat,W.adj,gwrt.lag,R=R,report=n.sim.rep,formula=formula, glw,approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   actual.m.err <- gwrt.err(sp.data,formula,glw,approach, kernel, adaptive,dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   actual.m.mlr <- gwrt.mlr(sp.data,formula,approach, kernel, adaptive,dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   actual.m.sma <- gwrt.sma(sp.data,formula,glw,approach, kernel, adaptive,dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   actual.m.lag <- gwrt.lag(sp.data,formula,glw,approach, kernel, adaptive,dMat,verbose=verbose, parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   indep.vars <- names(ols.model$coefficients)
+      #   var.n <- length(indep.vars)
+      #   idx1 <- match("(Intercept)",indep.vars)
+      #   if(!is.na(idx1))
+      #     indep.vars[idx1] <-"Intercept"
+      #   colnames(results.t) <- indep.vars	  
+      #   err.t.local <- c()
+      #   mlr.t.local <- c()
+      #   sma.t.local <- c()
+      #   lag.t.local <- c()
+      #   err.p.local <- c()
+      #   mlr.p.local <- c()
+      #   sma.p.local <- c()
+      #   lag.p.local <- c()
+      #   for(i in 1:var.n)
+      #   {
+      #     err.q.vec <- c()
+      #     mlr.q.vec <- c()
+      #     sma.q.vec <- c()
+      #     lag.q.vec <- c()
+      #     for(j in 1:R)
+      #     {
+      #       err.q.vec <- rbind(err.q.vec, err.bsm[[j]][,i])
+      #       mlr.q.vec <- rbind(mlr.q.vec, mlr.bsm[[j]][,i])
+      #       sma.q.vec <- rbind(sma.q.vec, sma.bsm[[j]][,i])
+      #       lag.q.vec <- rbind(lag.q.vec, lag.bsm[[j]][,i])
+      #     }
+      #     err.t.local <- cbind(err.t.local, ci.bs(err.q.vec,0.95))
+      #     mlr.t.local <- cbind(mlr.t.local, ci.bs(mlr.q.vec,0.95))
+      #     sma.t.local <- cbind(sma.t.local, ci.bs(sma.q.vec,0.95))
+      #     lag.t.local <- cbind(lag.t.local, ci.bs(lag.q.vec,0.95))
+      #     err.p.local <- cbind(err.p.local, pval.bs(err.q.vec,actual.m.err[,i]))
+      #     mlr.p.local <- cbind(mlr.p.local, pval.bs(mlr.q.vec,actual.m.mlr[,i]))
+      #     sma.p.local <- cbind(sma.p.local, pval.bs(sma.q.vec,actual.m.sma[,i]))
+      #     lag.p.local <- cbind(lag.p.local, pval.bs(lag.q.vec,actual.m.lag[,i]))
+      #   }
+      # }else{
+      #   lag.bsm <- parametric.bs.local(lag.model,dep.var,dp.locat,W.adj,gwrt.lag,R=R,report=n.sim.rep,formula=formula, glw,approach=approach, kernel=kernel, adaptive=adaptive,dMat=dMat,verbose=verbose,parallel.method=parallel.method,parallel.arg=parallel.arg)
+      #   return()
+      # }
 
+if("ERR" %in% ref_models){
+  err.bsm <- parametric.bs.local(
+    err.model, dep.var, dp.locat, W.adj, gwrt.err,
+    R = R, report = n.sim.rep, formula = formula, glw,
+    approach = approach, kernel = kernel, adaptive = adaptive,
+    dMat = dMat, verbose = verbose,
+    parallel.method = parallel.method, parallel.arg = parallel.arg
+  )
+  actual.m.err <- gwrt.err(sp.data, formula, glw, approach,
+                           kernel, adaptive, dMat, verbose = verbose,
+                           parallel.method = parallel.method, parallel.arg = parallel.arg)
+}
+
+if("OLS" %in% ref_models){
+  mlr.bsm <- parametric.bs.local(
+    ols.model, dep.var, dp.locat, W.adj, gwrt.mlr,
+    R = R, report = n.sim.rep, formula = formula,
+    approach = approach, kernel = kernel, adaptive = adaptive,
+    dMat = dMat, verbose = verbose,
+    parallel.method = parallel.method, parallel.arg = parallel.arg
+  )
+  actual.m.mlr <- gwrt.mlr(sp.data, formula, approach,
+                           kernel, adaptive, dMat, verbose = verbose,
+                           parallel.method = parallel.method, parallel.arg = parallel.arg)
+}
+
+if("SMA" %in% ref_models){
+  sma.bsm <- parametric.bs.local(
+    sma.model, dep.var, dp.locat, W.adj, gwrt.sma,
+    R = R, report = n.sim.rep, formula = formula, glw,
+    approach = approach, kernel = kernel, adaptive = adaptive,
+    dMat = dMat, verbose = verbose,
+    parallel.method = parallel.method, parallel.arg = parallel.arg
+  )
+  actual.m.sma <- gwrt.sma(sp.data, formula, glw, approach,
+                           kernel, adaptive, dMat, verbose = verbose,
+                           parallel.method = parallel.method, parallel.arg = parallel.arg)
+}
+
+if("LAG" %in% ref_models){
+  lag.bsm <- parametric.bs.local(
+    lag.model, dep.var, dp.locat, W.adj, gwrt.lag,
+    R = R, report = n.sim.rep, formula = formula, glw,
+    approach = approach, kernel = kernel, adaptive = adaptive,
+    dMat = dMat, verbose = verbose,
+    parallel.method = parallel.method, parallel.arg = parallel.arg
+  )
+  actual.m.lag <- gwrt.lag(sp.data, formula, glw, approach,
+                           kernel, adaptive, dMat, verbose = verbose,
+                           parallel.method = parallel.method, parallel.arg = parallel.arg)
+}
+
+# Variablen vorbereiten
+indep.vars <- names(ols.model$coefficients)
+var.n <- length(indep.vars)
+idx1 <- match("(Intercept)", indep.vars)
+if(!is.na(idx1)) indep.vars[idx1] <- "Intercept"
+colnames(results.t) <- indep.vars
+
+# Container für Ergebnisse
+err.t.local <- mlr.t.local <- sma.t.local <- lag.t.local <- c()
+err.p.local <- mlr.p.local <- sma.p.local <- lag.p.local <- c()
+
+for(i in 1:var.n){
+  err.q.vec <- mlr.q.vec <- sma.q.vec <- lag.q.vec <- c()
+
+  for(j in 1:R){
+    if(exists("err.bsm")) err.q.vec <- rbind(err.q.vec, err.bsm[[j]][,i])
+    if(exists("mlr.bsm")) mlr.q.vec <- rbind(mlr.q.vec, mlr.bsm[[j]][,i])
+    if(exists("sma.bsm")) sma.q.vec <- rbind(sma.q.vec, sma.bsm[[j]][,i])
+    if(exists("lag.bsm")) lag.q.vec <- rbind(lag.q.vec, lag.bsm[[j]][,i])
+  }
+
+  if(exists("err.bsm")){
+    err.t.local <- cbind(err.t.local, ci.bs(err.q.vec,0.95))
+    err.p.local <- cbind(err.p.local, pval.bs(err.q.vec, actual.m.err[,i]))
+  }
+  if(exists("mlr.bsm")){
+    mlr.t.local <- cbind(mlr.t.local, ci.bs(mlr.q.vec,0.95))
+    mlr.p.local <- cbind(mlr.p.local, pval.bs(mlr.q.vec, actual.m.mlr[,i]))
+  }
+  if(exists("sma.bsm")){
+    sma.t.local <- cbind(sma.t.local, ci.bs(sma.q.vec,0.95))
+    sma.p.local <- cbind(sma.p.local, pval.bs(sma.q.vec, actual.m.sma[,i]))
+  }
+  if(exists("lag.bsm")){
+    lag.t.local <- cbind(lag.t.local, ci.bs(lag.q.vec,0.95))
+    lag.p.local <- cbind(lag.p.local, pval.bs(lag.q.vec, actual.m.lag[,i]))
+  }
+}
+	
   #print()
   
-  bsm.local.df <- data.frame((gwr.model$SDF@data)[,c(1:(var.n+2), (var.n+6):(var.n*2+5))], mlr.p.local, err.p.local, sma.p.local, lag.p.local)
-  gwr.nms <- names(gwr.model$SDF@data)
-	names(bsm.local.df) <- c(gwr.nms[c(1:(var.n+2), (var.n+6):(var.n*2+5))], paste(indep.vars, "MLR_p", sep="_"), paste(indep.vars, "ERR_p", sep="_"),
-	                         paste(indep.vars, "SMA_p", sep="_"),paste(indep.vars, "LAG_p", sep="_"))	
+       # bsm.local.df <- data.frame((gwr.model$SDF@data)[,c(1:(var.n+2), (var.n+6):(var.n*2+5))], mlr.p.local, err.p.local, sma.p.local, lag.p.local)
+      # gwr.nms <- names(gwr.model$SDF@data)
+      # names(bsm.local.df) <- c(gwr.nms[c(1:(var.n+2), (var.n+6):(var.n*2+5))], paste(indep.vars, "MLR_p", sep="_"), paste(indep.vars, "ERR_p", sep="_"),
+      #                          paste(indep.vars, "SMA_p", sep="_"),paste(indep.vars, "LAG_p", sep="_"))		
+
+	# Basisdaten aus GWR
+base.df <- (gwr.model$SDF@data)[, c(1:(var.n+2), (var.n+6):(var.n*2+5))]
+gwr.nms  <- names(gwr.model$SDF@data)
+
+# Start mit Grunddaten
+bsm.local.df <- data.frame(base.df)
+
+# Dynamisch Spalten anhängen je nach ref_models
+if("OLS" %in% ref_models){
+  bsm.local.df <- cbind(bsm.local.df, mlr.p.local)
+  names(bsm.local.df)[(ncol(bsm.local.df)-var.n+1):ncol(bsm.local.df)] <-
+    paste(indep.vars, "MLR_p", sep="_")
+}
+
+if("ERR" %in% ref_models){
+  bsm.local.df <- cbind(bsm.local.df, err.p.local)
+  names(bsm.local.df)[(ncol(bsm.local.df)-var.n+1):ncol(bsm.local.df)] <-
+    paste(indep.vars, "ERR_p", sep="_")
+}
+
+if("SMA" %in% ref_models){
+  bsm.local.df <- cbind(bsm.local.df, sma.p.local)
+  names(bsm.local.df)[(ncol(bsm.local.df)-var.n+1):ncol(bsm.local.df)] <-
+    paste(indep.vars, "SMA_p", sep="_")
+}
+
+if("LAG" %in% ref_models){
+  bsm.local.df <- cbind(bsm.local.df, lag.p.local)
+  names(bsm.local.df)[(ncol(bsm.local.df)-var.n+1):ncol(bsm.local.df)] <-
+    paste(indep.vars, "LAG_p", sep="_")
+}
+
+# Namen für die Basisdaten setzen
+names(bsm.local.df)[1:(var.n+2 + (var.n))] <- 
+  gwr.nms[c(1:(var.n+2), (var.n+6):(var.n*2+5))]
+	
 	if (!is.null(polygons))
     {
       # polygons<-polygons(data)
@@ -192,148 +443,305 @@ gwr.bootstrap <- function(formula, data, kernel="bisquare",approach="AIC", R=99,
     invisible(res)
 }
 ######################
-print.gwrbsm <- function(x, ...)
-{
+      # print.gwrbsm <- function(x, ...)
+      # {
+      #   if(!inherits(x, "gwrbsm")) stop("It's not a gwm object")
+      #   cat("   ***********************************************************************\n")
+      #   cat("   *                       Package   GWmodel                             *\n")
+      #   cat("   ***********************************************************************\n")
+      #   cat("   Program starts at:", as.character(x$timings$start), "\n")
+      #   cat("   Call:\n")
+      #   cat("   ")
+      #   print(x$this.call)
+      #   vars<-all.vars(x$formula)
+      #   cat("\n   Dependent (y) variable: ",vars[1])
+      #   cat("\n   Independent variables: ",vars[-1])
+      #   dp.n<-nrow(x$SDF@data)
+      #   cat("\n   Number of data points:",dp.n)
+      #   indep.vars <- colnames(x$results)
+      #   var.n <- length(indep.vars)
+      #   ################################################################ Print Global statistic
+      #   cat("\n   ***********************************************************************\n")
+      #   cat("   *                             Bootstrap GWR                           *\n")
+      #   cat("   ***********************************************************************\n")
+      #   cat("   ***                 Geographically weighted regression              ***\n")
+      #   df0 <- x$SDF@data[, 1:(var.n*2+2)]
+      #   if (any(is.na(df0))) {
+      #     df0 <- na.omit(df0)
+      #     warning("NAs in coefficients dropped")
+      #   }
+      #   CM <- t(apply(df0, 2, summary))[,c(1:3,5,6)]
+      #   rnames<-rownames(CM)
+      #   for (i in 1:length(rnames))
+      #     rnames[i]<-paste("   ",rnames[i],sep="")
+      #   rownames(CM) <-rnames 
+      #   printCoefmat(CM) 
+      #   cat("   ***********************************************************************\n")
+      #   cat("   ***                      Modified test statistic                    ***\n")
+      #   cat("   *Comparison with a multiple linear regression model (MLR):\n\n")
+      #   
+      #   cat("    Modified statistic for MLR at 95% level:\n")
+      #   dm <- matrix(x$results[1,], nrow=1)
+      #   rownames(dm) <- "   "
+      #   colnames(dm) <- indep.vars
+      #   printCoefmat(dm)
+      #   cat("\n    p value to accept null hypothese(MLR):\n")
+      #   dm <- matrix(x$results[2,], nrow=1)
+      #   rownames(dm) <- "   "
+      #   colnames(dm) <- indep.vars
+      #   printCoefmat(dm)
+      #   cat("\n   *Comparison with a simultaneous autoregressive error model (ERR):\n\n")
+      #   cat("    Modified statistic for ERR at 95%: \n")
+      #   dm <- matrix(x$results[3,], nrow=1)
+      #   rownames(dm) <- "   "
+      #   colnames(dm) <- indep.vars
+      #   printCoefmat(dm)
+      #   cat("\n    p value to accept null hypothese(ERR):\n")
+      #   dm <- matrix(x$results[4,], nrow=1)
+      #   rownames(dm) <- "   "
+      #   colnames(dm) <- indep.vars
+      #   printCoefmat(dm)
+      #   cat("\n   *Comparison with a moving average error model (SMA):\n\n")
+      #   cat("    Modified statistic for SMA at 95%: \n")
+      #   dm <- matrix(x$results[5,], nrow=1)
+      #   rownames(dm) <- "   "
+      #   colnames(dm) <- indep.vars
+      #   printCoefmat(dm)
+      #   cat("\n    p value to accept null hypothese(SMA): \n")
+      #   dm <- matrix(x$results[6,], nrow=1)
+      #   rownames(dm) <- "   "
+      #   colnames(dm) <- indep.vars
+      #   printCoefmat(dm)
+      #   cat("\n   *Comparison with a simultaneous autoregressive lag model (LAG):\n\n")
+      #   cat("    Modified statistic for LAG at 95%: \n")
+      #   dm <- matrix(x$results[7,], nrow=1)
+      #   rownames(dm) <- "   "
+      #   colnames(dm) <- indep.vars
+      #   printCoefmat(dm)
+      #   cat("\n    p value to accept null hypothese(LAG): \n")
+      #   dm <- matrix(x$results[8,], nrow=1)
+      #   rownames(dm) <- "   "
+      #   colnames(dm) <- indep.vars
+      #   printCoefmat(dm)
+      #   cat("   ***********************************************************************\n")
+      #   cat("   ***                      Localized test statistic                   ***\n")
+      #   df1 <- x$SDF@data[, (1:(var.n*2+2))*(-1)]
+      #   if (any(is.na(df0))) {
+      #     df1 <- na.omit(df1)
+      #     warning("NAs in coefficients dropped")
+      #   }
+      #   CM <- t(apply(df1, 2, summary))[,c(1:3,5,6)]
+      #   rnames<-rownames(CM)
+      #   for (i in 1:length(rnames))
+      #     rnames[i]<-paste("   ",rnames[i],sep="")
+      #   rownames(CM) <-rnames 
+      #   printCoefmat(CM)
+      #   cat("   *** Note the '_p' means the p value from the localised pseudo-t statistic.\n")
+      #   cat("   ***********************************************************************\n")
+      #   cat("   Program stops at:", as.character(x$timings$stop), "\n")
+      #   invisible(x)
+      # }
+	
+print.gwrbsm <- function(x, ref_models = c("OLS","ERR","SMA","LAG"), ...) {
   if(!inherits(x, "gwrbsm")) stop("It's not a gwm object")
+  
   cat("   ***********************************************************************\n")
   cat("   *                       Package   GWmodel                             *\n")
   cat("   ***********************************************************************\n")
   cat("   Program starts at:", as.character(x$timings$start), "\n")
-  cat("   Call:\n")
-  cat("   ")
-  print(x$this.call)
-  vars<-all.vars(x$formula)
-	cat("\n   Dependent (y) variable: ",vars[1])
-	cat("\n   Independent variables: ",vars[-1])
-	dp.n<-nrow(x$SDF@data)
-	cat("\n   Number of data points:",dp.n)
- indep.vars <- colnames(x$results)
- 	  var.n <- length(indep.vars)
-################################################################ Print Global statistic
- 	cat("\n   ***********************************************************************\n")
-	  cat("   *                             Bootstrap GWR                           *\n")
-      cat("   ***********************************************************************\n")
-	  cat("   ***                 Geographically weighted regression              ***\n")
-    df0 <- x$SDF@data[, 1:(var.n*2+2)]
-    if (any(is.na(df0))) {
-            df0 <- na.omit(df0)
-            warning("NAs in coefficients dropped")
-        }
-	  CM <- t(apply(df0, 2, summary))[,c(1:3,5,6)]
-	rnames<-rownames(CM)
-		for (i in 1:length(rnames))
-			 rnames[i]<-paste("   ",rnames[i],sep="")
-	rownames(CM) <-rnames 
-	printCoefmat(CM) 
-	  cat("   ***********************************************************************\n")
-	  cat("   ***                      Modified test statistic                    ***\n")
-      cat("   *Comparison with a multiple linear regression model (MLR):\n\n")
-	  
- 	  cat("    Modified statistic for MLR at 95% level:\n")
-      dm <- matrix(x$results[1,], nrow=1)
-	  rownames(dm) <- "   "
-	  colnames(dm) <- indep.vars
-	  printCoefmat(dm)
-	  cat("\n    p value to accept null hypothese(MLR):\n")
-	  dm <- matrix(x$results[2,], nrow=1)
-	  rownames(dm) <- "   "
-	  colnames(dm) <- indep.vars
-	  printCoefmat(dm)
-	  cat("\n   *Comparison with a simultaneous autoregressive error model (ERR):\n\n")
- 	  cat("    Modified statistic for ERR at 95%: \n")
-	  dm <- matrix(x$results[3,], nrow=1)
-	  rownames(dm) <- "   "
-	  colnames(dm) <- indep.vars
-	  printCoefmat(dm)
-	  cat("\n    p value to accept null hypothese(ERR):\n")
-	  dm <- matrix(x$results[4,], nrow=1)
-	  rownames(dm) <- "   "
-	  colnames(dm) <- indep.vars
-	  printCoefmat(dm)
-	  cat("\n   *Comparison with a moving average error model (SMA):\n\n")
- 	  cat("    Modified statistic for SMA at 95%: \n")
-	  dm <- matrix(x$results[5,], nrow=1)
-	  rownames(dm) <- "   "
-	  colnames(dm) <- indep.vars
-	  printCoefmat(dm)
-	  cat("\n    p value to accept null hypothese(SMA): \n")
-	  dm <- matrix(x$results[6,], nrow=1)
-	  rownames(dm) <- "   "
-	  colnames(dm) <- indep.vars
-	  printCoefmat(dm)
-	  cat("\n   *Comparison with a simultaneous autoregressive lag model (LAG):\n\n")
- 	  cat("    Modified statistic for LAG at 95%: \n")
-	  dm <- matrix(x$results[7,], nrow=1)
-	  rownames(dm) <- "   "
-	  colnames(dm) <- indep.vars
-	  printCoefmat(dm)
-	  cat("\n    p value to accept null hypothese(LAG): \n")
-	  dm <- matrix(x$results[8,], nrow=1)
-	  rownames(dm) <- "   "
-	  colnames(dm) <- indep.vars
-	  printCoefmat(dm)
-    cat("   ***********************************************************************\n")
-	  cat("   ***                      Localized test statistic                   ***\n")
-	  df1 <- x$SDF@data[, (1:(var.n*2+2))*(-1)]
-        if (any(is.na(df0))) {
-            df1 <- na.omit(df1)
-            warning("NAs in coefficients dropped")
-        }
-	  CM <- t(apply(df1, 2, summary))[,c(1:3,5,6)]
-	rnames<-rownames(CM)
-		for (i in 1:length(rnames))
-			 rnames[i]<-paste("   ",rnames[i],sep="")
-	rownames(CM) <-rnames 
-	printCoefmat(CM)
-	cat("   *** Note the '_p' means the p value from the localised pseudo-t statistic.\n")
-	cat("   ***********************************************************************\n")
-	cat("   Program stops at:", as.character(x$timings$stop), "\n")
-	invisible(x)
+  cat("   Call:\n   "); print(x$this.call)
+  
+  vars <- all.vars(x$formula)
+  cat("\n   Dependent (y) variable: ", vars[1])
+  cat("\n   Independent variables: ", vars[-1])
+  
+  dp.n <- nrow(x$SDF@data)
+  cat("\n   Number of data points:", dp.n)
+  
+  indep.vars <- colnames(x$results)
+  var.n <- length(indep.vars)
+  
+  # --- Global summary of coefficients
+  cat("\n   ***********************************************************************\n")
+  cat("   *                             Bootstrap GWR                           *\n")
+  cat("   ***********************************************************************\n")
+  cat("   ***                 Geographically weighted regression              ***\n")
+  
+  df0 <- x$SDF@data[, 1:(var.n*2+2)]
+  if (any(is.na(df0))) {
+    df0 <- na.omit(df0)
+    warning("NAs in coefficients dropped")
+  }
+  CM <- t(apply(df0, 2, summary))[,c(1:3,5,6)]
+  rownames(CM) <- paste("   ", rownames(CM), sep="")
+  printCoefmat(CM)
+  
+  # --- Modified test statistics (dynamic)
+  cat("   ***********************************************************************\n")
+  cat("   ***                      Modified test statistic                    ***\n")
+  
+  row_index <- 1
+  for(model in ref_models){
+    if(model == "OLS"){
+      cat("\n   *Comparison with a multiple linear regression model (MLR):\n\n")
+      cat("    Modified statistic for MLR at 95% level:\n")
+      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+      
+      cat("\n    p value to accept null hypothese (MLR):\n")
+      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+    }
+    if(model == "ERR"){
+      cat("\n   *Comparison with a simultaneous autoregressive error model (ERR):\n\n")
+      cat("    Modified statistic for ERR at 95%:\n")
+      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+      
+      cat("\n    p value to accept null hypothese (ERR):\n")
+      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+    }
+    if(model == "SMA"){
+      cat("\n   *Comparison with a moving average error model (SMA):\n\n")
+      cat("    Modified statistic for SMA at 95%:\n")
+      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+      
+      cat("\n    p value to accept null hypothese (SMA):\n")
+      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+    }
+    if(model == "LAG"){
+      cat("\n   *Comparison with a simultaneous autoregressive lag model (LAG):\n\n")
+      cat("    Modified statistic for LAG at 95%:\n")
+      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+      
+      cat("\n    p value to accept null hypothese (LAG):\n")
+      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+    }
+  }
+  
+  # --- Localized test statistics
+  cat("   ***********************************************************************\n")
+  cat("   ***                      Localized test statistic                   ***\n")
+  
+  # nur die *_p Spalten
+  df1 <- x$SDF@data[, grep("_p$", names(x$SDF@data))]
+  if (any(is.na(df1))) {
+    df1 <- na.omit(df1)
+    warning("NAs in coefficients dropped")
+  }
+  CM <- t(apply(df1, 2, summary))[,c(1:3,5,6)]
+  rownames(CM) <- paste("   ", rownames(CM), sep="")
+  printCoefmat(CM)
+  
+  cat("   *** Note the '_p' means the p value from the localised pseudo-t statistic.\n")
+  cat("   ***********************************************************************\n")
+  cat("   Program stops at:", as.character(x$timings$stop), "\n")
+  
+  invisible(x)
 }
-	
+
 ################################################################################
-generate.lm.data <- function(obj,W,dep.var) {
-	generate.data.lm <- function(obj,W,dep.var) {
-		x = obj$model
-		#yname = deparse(obj$terms[[2]])
-		yname <- dep.var
-		ypos = match(yname,colnames(x))
-		y = fitted(obj) + rnorm(nrow(x),0,summary(obj)$sigma)
-		x[,ypos] = y
-		data.frame(x)}
-# Error SAR lm
-	generate.data.errorsarlm <- function(obj,W,dep.var) {
-		x = as.matrix(cbind(obj$y,obj$X[,-1]))
-		# x = as.matrix(obj$lm.model$model)
-		#yname <- deparse(eval(obj$call$formula)[[2]])
-		yname <- dep.var
-		ypos=1
-		# ypos = match(yname,colnames(x))
-		y = fitted(obj)+solve(diag(nrow(x))-obj$lambda*W,rnorm(nrow(x),0,sqrt(obj$s2)))
-		x[,ypos] = y
-		colnames(x)[ypos] <- yname
-		x <- data.frame(x)
-		x}
-# Error SMA lm
-	generate.data.smalm <- function(obj,W,dep.var) {
-		x = as.matrix(obj$model)
-		yname <- dep.var
-		#yname <- all.vars(eval(obj$call$formula))[1]
-		ypos = match(yname,colnames(x))
-		y = fitted(obj)+(diag(nrow(x))+obj$lambda*W) %*% rnorm(nrow(x),0,sqrt(obj$fit$s2))
-		x[,ypos] = y
-		x <- data.frame(x)
-		}
-# Lagged SAR lm
-	generate.data.lagsarlm <- function(obj,W,dep.var) {
-		x = as.matrix(cbind(obj$y,obj$X[,-1]))
-		yname <- dep.var
-		#yname <- all.vars(eval(obj$call$formula))[1]
-		ypos=1
-		y = solve(diag(nrow(x))-obj$rho*W,obj$fitted+rnorm(nrow(x),0,sqrt(obj$s2)))
-		x[,ypos] = y
-		colnames(x)[ypos] = yname
-		x <- data.frame(x)}
+      # generate.lm.data <- function(obj,W,dep.var) {
+      #   generate.data.lm <- function(obj,W,dep.var) {
+      #     x = obj$model
+      #     #yname = deparse(obj$terms[[2]])
+      #     yname <- dep.var
+      #     ypos = match(yname,colnames(x))
+      #     y = fitted(obj) + rnorm(nrow(x),0,summary(obj)$sigma)
+      #     x[,ypos] = y
+      #     data.frame(x)}
+      #   # Error SAR lm
+      #   generate.data.errorsarlm <- function(obj,W,dep.var) {
+      #     x = as.matrix(cbind(obj$y,obj$X[,-1]))
+      #     # x = as.matrix(obj$lm.model$model)
+      #     #yname <- deparse(eval(obj$call$formula)[[2]])
+      #     yname <- dep.var
+      #     ypos=1
+      #     # ypos = match(yname,colnames(x))
+      #     y = fitted(obj)+solve(diag(nrow(x))-obj$lambda*W,rnorm(nrow(x),0,sqrt(obj$s2)))
+      #     x[,ypos] = y
+      #     colnames(x)[ypos] <- yname
+      #     x <- data.frame(x)
+      #     x}
+      #   # Error SMA lm
+      #   generate.data.smalm <- function(obj,W,dep.var) {
+      #     x = as.matrix(obj$model)
+      #     yname <- dep.var
+      #     #yname <- all.vars(eval(obj$call$formula))[1]
+      #     ypos = match(yname,colnames(x))
+      #     y = fitted(obj)+(diag(nrow(x))+obj$lambda*W) %*% rnorm(nrow(x),0,sqrt(obj$fit$s2))
+      #     x[,ypos] = y
+      #     x <- data.frame(x)
+      #   }
+      #   # Lagged SAR lm
+      #   generate.data.lagsarlm <- function(obj,W,dep.var) {
+      #     x = as.matrix(cbind(obj$y,obj$X[,-1]))
+      #     yname <- dep.var
+      #     #yname <- all.vars(eval(obj$call$formula))[1]
+      #     ypos=1
+      #     y = solve(diag(nrow(x))-obj$rho*W,obj$fitted+rnorm(nrow(x),0,sqrt(obj$s2)))
+      #     x[,ypos] = y
+      #     colnames(x)[ypos] = yname
+      #     x <- data.frame(x)}
+
+generate.lm.data <- function(obj, W, dep.var, ref_models = c("OLS","ERR","SMA","LAG")) {
+  
+  if("OLS" %in% ref_models){
+    generate.data.lm <- function(obj, W, dep.var) {
+      x <- obj$model
+      yname <- dep.var
+      ypos <- match(yname, colnames(x))
+      y <- fitted(obj) + rnorm(nrow(x), 0, summary(obj)$sigma)
+      x[, ypos] <- y
+      data.frame(x)
+    }
+  }
+  
+  if("ERR" %in% ref_models){
+    generate.data.errorsarlm <- function(obj, W, dep.var) {
+      x <- as.matrix(cbind(obj$y, obj$X[,-1]))
+      yname <- dep.var
+      ypos <- 1
+      y <- fitted(obj) + solve(diag(nrow(x)) - obj$lambda*W,
+                               rnorm(nrow(x), 0, sqrt(obj$s2)))
+      x[, ypos] <- y
+      colnames(x)[ypos] <- yname
+      data.frame(x)
+    }
+  }
+  
+  if("SMA" %in% ref_models){
+    generate.data.smalm <- function(obj, W, dep.var) {
+      x <- as.matrix(obj$model)
+      yname <- dep.var
+      ypos <- match(yname, colnames(x))
+      y <- fitted(obj) + (diag(nrow(x)) + obj$lambda*W) %*%
+        rnorm(nrow(x), 0, sqrt(obj$fit$s2))
+      x[, ypos] <- y
+      data.frame(x)
+    }
+  }
+  
+  if("LAG" %in% ref_models){
+    generate.data.lagsarlm <- function(obj, W, dep.var) {
+      x <- as.matrix(cbind(obj$y, obj$X[,-1]))
+      yname <- dep.var
+      ypos <- 1
+      y <- solve(diag(nrow(x)) - obj$rho*W,
+                 obj$fitted + rnorm(nrow(x), 0, sqrt(obj$s2)))
+      x[, ypos] <- y
+      colnames(x)[ypos] <- yname
+      data.frame(x)
+    }
+  }
+}
+
+										
 # What kind of model is it
 	# model.type <- function(obj) {
 #   print(obj)
@@ -566,7 +974,7 @@ gwrt.lag <- function(data,formula,glw,approach, kernel, adaptive,dMat,verbose=FA
 	  tvals <- cbind(tvals,(coefs[,i]-globcoef[i])/sds[,i]) # added by PH
 	}
 	#tvals <-as.data.frame(tvals)
-	#names(tvals) <- paste(indep.vars, "ERR_t", sep="_")
+	#names(tvals) <- paste(indep.vars, "LAG_t", sep="_")
 	tvals
 	}
 
