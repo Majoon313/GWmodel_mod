@@ -576,12 +576,16 @@ print.gwrbsm <- function(x, ref_models = c("OLS","ERR","LAG"), ...) {
   rownames(CM) <- paste("   ", rownames(CM), sep="")
   printCoefmat(CM)
   
-  # --- Modified test statistics (strictly by ref_models)
+  # --- Modified test statistics
   cat("   ***********************************************************************\n")
   cat("   ***                      Modified test statistic                    ***\n")
   
   row_index <- 1
   for(model in ref_models){
+    if(row_index + 1 > nrow(x$results)){
+      warning(paste("Not enough rows in x$results for model", model, "- skipped"))
+      next
+    }
     if(model == "OLS"){
       cat("\n   *Comparison with a multiple linear regression model (MLR):\n\n")
       cat("    Modified statistic for MLR at 95% level:\n")
@@ -633,6 +637,7 @@ print.gwrbsm <- function(x, ref_models = c("OLS","ERR","LAG"), ...) {
   
   invisible(x)
 }
+
 
 
 ################################################################################
