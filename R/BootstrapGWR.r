@@ -576,13 +576,13 @@ print.gwrbsm <- function(x, ref_models = c("OLS","ERR","LAG"), ...) {
   rownames(CM) <- paste("   ", rownames(CM), sep="")
   printCoefmat(CM)
   
-  # --- Modified test statistics (dynamic)
+  # --- Modified test statistics (strictly by ref_models)
   cat("   ***********************************************************************\n")
   cat("   ***                      Modified test statistic                    ***\n")
   
   row_index <- 1
   for(model in ref_models){
-    if(model == "OLS" && row_index+1 <= nrow(x$results)){
+    if(model == "OLS"){
       cat("\n   *Comparison with a multiple linear regression model (MLR):\n\n")
       cat("    Modified statistic for MLR at 95% level:\n")
       dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
@@ -592,7 +592,7 @@ print.gwrbsm <- function(x, ref_models = c("OLS","ERR","LAG"), ...) {
       dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
       rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
     }
-    if(model == "ERR" && row_index+1 <= nrow(x$results)){
+    if(model == "ERR"){
       cat("\n   *Comparison with a simultaneous autoregressive error model (ERR):\n\n")
       cat("    Modified statistic for ERR at 95%:\n")
       dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
@@ -602,7 +602,7 @@ print.gwrbsm <- function(x, ref_models = c("OLS","ERR","LAG"), ...) {
       dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
       rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
     }
-    if(model == "LAG" && row_index+1 <= nrow(x$results)){
+    if(model == "LAG"){
       cat("\n   *Comparison with a simultaneous autoregressive lag model (LAG):\n\n")
       cat("    Modified statistic for LAG at 95%:\n")
       dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
