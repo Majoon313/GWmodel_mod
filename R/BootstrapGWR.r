@@ -173,12 +173,14 @@ if("LAG" %in% ref_models){
       # }
 
 	results.t <- NULL
+
 if("MLR" %in% ref_models){
   results.t <- rbind(
     results.t,
     ci.bs(ols.bst, 0.95),
     pval.bs(ols.bst, actual.t)
   )
+  rownames(results.t)[(nrow(results.t)-1):nrow(results.t)] <- c("MLR_stat","MLR_p")
 }
 
 if("ERR" %in% ref_models){
@@ -187,6 +189,7 @@ if("ERR" %in% ref_models){
     ci.bs(err.bst, 0.95),
     pval.bs(err.bst, actual.t)
   )
+  rownames(results.t)[(nrow(results.t)-1):nrow(results.t)] <- c("ERR_stat","ERR_p")
 }
 
 if("SMA" %in% ref_models){
@@ -195,6 +198,7 @@ if("SMA" %in% ref_models){
     ci.bs(sma.bst, 0.95),
     pval.bs(sma.bst, actual.t)
   )
+  rownames(results.t)[(nrow(results.t)-1):nrow(results.t)] <- c("SMA_stat","SMA_p")
 }
 
 if("LAG" %in% ref_models){
@@ -203,7 +207,9 @@ if("LAG" %in% ref_models){
     ci.bs(lag.bst, 0.95),
     pval.bs(lag.bst, actual.t)
   )
+  rownames(results.t)[(nrow(results.t)-1):nrow(results.t)] <- c("LAG_stat","LAG_p")
 }
+
 
 				      # if(test_k.nearneigh_val==FALSE){
       #   rownames(results.t) = c("   Modified statistic for MLR at 95% level","   p value to accept null hypothese(MLR)","   Modified statistic for ERR at 95%","   p value to accept null hypothese (ERR)",
