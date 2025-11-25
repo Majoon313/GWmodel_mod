@@ -576,53 +576,54 @@ print.gwrbsm <- function(x, ref_models = c("OLS","ERR","SMA","LAG"), ...) {
   rownames(CM) <- paste("   ", rownames(CM), sep="")
   printCoefmat(CM)
   
-  # --- Modified test statistics (dynamic)
-  cat("   ***********************************************************************\n")
-  cat("   ***                      Modified test statistic                    ***\n")
-  
-  row_index <- 1
-  for(model in ref_models){
-    if(model == "OLS"){
-      cat("\n   *Comparison with a multiple linear regression model (MLR):\n\n")
-      cat("    Modified statistic for MLR at 95% level:\n")
-      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
-      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
-      
-      cat("\n    p value to accept null hypothese (MLR):\n")
-      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
-      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
-    }
-    if(model == "ERR"){
-      cat("\n   *Comparison with a simultaneous autoregressive error model (ERR):\n\n")
-      cat("    Modified statistic for ERR at 95%:\n")
-      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
-      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
-      
-      cat("\n    p value to accept null hypothese (ERR):\n")
-      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
-      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
-    }
-    if(model == "SMA"){
-      cat("\n   *Comparison with a moving average error model (SMA):\n\n")
-      cat("    Modified statistic for SMA at 95%:\n")
-      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
-      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
-      
-      cat("\n    p value to accept null hypothese (SMA):\n")
-      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
-      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
-    }
-    if(model == "LAG"){
-      cat("\n   *Comparison with a simultaneous autoregressive lag model (LAG):\n\n")
-      cat("    Modified statistic for LAG at 95%:\n")
-      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
-      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
-      
-      cat("\n    p value to accept null hypothese (LAG):\n")
-      dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
-      rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
-    }
+ # --- Modified test statistics (dynamic)
+cat("   ***********************************************************************\n")
+cat("   ***                      Modified test statistic                    ***\n")
+
+row_index <- 1
+for(model in ref_models){
+  if(model == "OLS"){
+    cat("\n   *Comparison with a multiple linear regression model (MLR):\n\n")
+    cat("    Modified statistic for MLR at 95% level:\n")
+    dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+    rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+
+    cat("\n    p value to accept null hypothese (MLR):\n")
+    dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+    rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
   }
+  if(model == "ERR"){
+    cat("\n   *Comparison with a simultaneous autoregressive error model (ERR):\n\n")
+    cat("    Modified statistic for ERR at 95%:\n")
+    dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+    rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+
+    cat("\n    p value to accept null hypothese (ERR):\n")
+    dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+    rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+  }
+  if(model == "SMA"){
+    cat("\n   *Comparison with a moving average error model (SMA):\n\n")
+    cat("    Modified statistic for SMA at 95%:\n")
+    dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+    rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+
+    cat("\n    p value to accept null hypothese (SMA):\n")
+    dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+    rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+  }
+  if(model == "LAG"){
+    cat("\n   *Comparison with a simultaneous autoregressive lag model (LAG):\n\n")
+    cat("    Modified statistic for LAG at 95%:\n")
+    dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+    rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+
+    cat("\n    p value to accept null hypothese (LAG):\n")
+    dm <- matrix(x$results[row_index,], nrow=1); row_index <- row_index+1
+    rownames(dm) <- "   "; colnames(dm) <- indep.vars; printCoefmat(dm)
+  }
+}
+
   
   # --- Localized test statistics
   cat("   ***********************************************************************\n")
