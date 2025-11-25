@@ -86,9 +86,9 @@ gwr.bootstrap <- function(formula, data, kernel="bisquare",approach="AIC", R=99,
       #   dep.var <- deparse(eval(lag.model$call$formula)[[2]])
       # }
 
-if("OLS" %in% ref_models){
-  ols.model <- lm(formula, data)
-}
+#if("OLS" %in% ref_models){
+  ols.model <- lm(formula, data) #always have to calculate it otherwise error later
+#}
 
 if("ERR" %in% ref_models){
   err.model <- errorsarlm(formula, data, listw = glw, method = "spam")
